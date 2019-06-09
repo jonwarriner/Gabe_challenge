@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include "clock_config.h"
 #include "uart.h"
+#include "i2c.h"
+#include "MMA8451Q.h"
 #include "led.h"
 #include "ring.h"
 #include "disp.h"
@@ -38,6 +40,8 @@
 ring_t *tx_buf = 0;
 
 disp_t disp = {0};
+
+I2C_Packet gPacket = {0};
 
 /*
  * @brief   Application entry point.
@@ -56,16 +60,22 @@ int main(void) {
     //Initialize UART0
     UART_init();
 
+    //Initialize the I2C module
+    I2C_init(&gPacket);
+
     //just letting this print to the console window to let me know the code started.
     printf("Hello World\n");
 
     /* Force the counter to be placed into memory. */
     volatile static int i = 0 ;
+
+    Init_MMA8451Q(&gPacket);
     /* Enter an infinite loop, just incrementing a counter. */
     while(1) {
         i++;
         Display_task(&disp);
         Display_New_Val(&disp,i);
+        I2C_POLL(&gPacket);
     }
     return 0 ;
 }
