@@ -36,24 +36,6 @@ typedef enum
 	WR_ADDRESS = 0,
 	WR_COMMAND,
 	WR_DATA1,
-#ifdef JUNK
-	WR_DATA2,
-#ifdef I2C_LOG
-	WR_DATA3,
-	WR_DATA4,
-	WR_DATA5,
-	WR_DATA6,
-	WR_DATA7,
-	WR_DATA8,
-	WR_DATA9,
-	WR_DATA10,
-	WR_DATA11,
-	WR_DATA12,
-	WR_DATA13,
-	WR_DATA14,
-#endif
-	WR_PEC,
-#endif
 	WR_DONE,
 	RD_ADDRESS,
 	RD_SWITCH,
@@ -70,7 +52,7 @@ typedef enum
 */
 typedef struct _I2C_PACKET_
 {
-	uint8_t (*i2c_callback)();
+	uint8_t (*i2c_callback)(uint8_t, void *);
 	I2C_STATE state;
 	uint8_t read_write_n;					// read/write_n
 	uint8_t slaveAddress;
@@ -82,7 +64,6 @@ typedef struct _I2C_PACKET_
 #else
 	uint8_t data[4];
 #endif
-	uint8_t	PEC;
 } I2C_Packet;
 
 /**
@@ -156,5 +137,14 @@ void Run_I2C_Master(I2C_Packet *packet);
 * @return void.
 */
 void I2C_POLL(I2C_Packet *packet);
+
+/**
+* @brief I2C Callback Handler
+*
+* I2C Callback functionality for the background loop
+*
+* @return void.
+*/
+uint8_t Check_I2C_Callback(I2C_Packet *packet, void *p);
 
 #endif /* I2C_H_ */

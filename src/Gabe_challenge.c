@@ -28,6 +28,7 @@
 #include "led.h"
 #include "ring.h"
 #include "disp.h"
+#include "angles.h"
 #include "MKL25Z4.h"
 
 //#define PART_2
@@ -42,6 +43,10 @@ ring_t *tx_buf = 0;
 disp_t disp = {0};
 
 I2C_Packet gPacket = {0};
+
+MMA8451Q accel = {0};
+
+ANGLE_DATA angles = {0};
 
 /*
  * @brief   Application entry point.
@@ -69,13 +74,16 @@ int main(void) {
     /* Force the counter to be placed into memory. */
     volatile static int i = 0 ;
 
-    Init_MMA8451Q(&gPacket);
     /* Enter an infinite loop, just incrementing a counter. */
     while(1) {
         i++;
         Display_task(&disp);
-        Display_New_Val(&disp,i);
+        Display_New_Val(&disp,accel.data.data.x_data);
+       	Update_MMA8451Q(&accel, &gPacket);
         I2C_POLL(&gPacket);
+        Check_I2C_Callback(&gPacket, (void *)&accel);
+
+        Calc_angles(&accel.data.data, &angles);
     }
     return 0 ;
 }

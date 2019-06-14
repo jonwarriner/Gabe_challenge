@@ -36,7 +36,7 @@ typedef struct
 	char sbuf[80];
 	uint8_t trig;				//set to 1 to trigger the display update
 	uint16_t i;					//index of sample that is currently being updated
-	uint16_t val;				//single value to display
+	int16_t val;				//single value to display
 }disp_t;
 
 /**

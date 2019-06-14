@@ -103,19 +103,28 @@ uint8_t I2C_Read(I2C_Packet *packet)
 	temp = I2C_Transfer_Complete();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 	// Ensure the bus isn't busy
 	temp = I2C_Check_Busy();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 	// MST bit should be clear by the time we want to start another message
 	temp =  I2C_Check_MST();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 	// Return to Transmit Mode
 	I2C0->C1 |= I2C_C1_TX_MASK;
@@ -142,19 +151,28 @@ uint8_t I2C_Write(I2C_Packet *packet)
 	temp = I2C_Transfer_Complete();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 	// Ensure the bus isn't busy
 	temp = I2C_Check_Busy();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 	// MST bit should be clear by the time we want to start another message
 	temp =  I2C_Check_MST();
 
 	if(temp > 0)
+	{
+		__asm("bkpt");
 		return temp;
+	}
 
 //#ifndef I2C_LOG
 //	// calculate the PEC
@@ -197,6 +215,7 @@ uint8_t I2C_Transfer_Complete()
 			else
 				temp = I2C0->D;
 
+			__asm("bkpt");
 			return 2;
 		}
 	}
@@ -223,6 +242,7 @@ uint8_t I2C_Check_Busy()
 			else
 				temp = I2C0->D;
 
+			__asm("bkpt");
 			return 2;
 		}
 	}
@@ -236,7 +256,7 @@ uint8_t I2C_Check_MST()
 	if(I2C0->C1 & I2C_C1_MST_MASK)
 	{
 		error = 2;
-//		__asm("bkpt");
+		__asm("bkpt");
 	}
 
 	return(error);
@@ -291,37 +311,6 @@ void Run_I2C_Master(I2C_Packet *packet)
 				I2C0->D = packet->data[0];
 				packet->state++;
 				break;
-#ifdef JUNK
-			case WR_DATA2:
-				I2C0->D = packet->data[1];
-				packet->state++;
-#ifdef I2C_LOG
-				packet->idx = 2;
-#endif
-				break;
-#ifdef I2C_LOG
-			case WR_DATA3:
-			case WR_DATA4:
-			case WR_DATA5:
-			case WR_DATA6:
-			case WR_DATA7:
-			case WR_DATA8:
-			case WR_DATA9:
-			case WR_DATA10:
-			case WR_DATA11:
-			case WR_DATA12:
-			case WR_DATA13:
-			case WR_DATA14:
-				I2C0->D = packet->data[packet->idx];
-				packet->state++;
-				packet->idx++;
-				break;
-#endif
-			case WR_PEC:
-				I2C0->D = packet->PEC;
-				packet->state++;
-				break;
-#endif
 			case WR_DONE:
 				// reset the packet state
 				packet->state = WR_ADDRESS;
@@ -408,4 +397,17 @@ void I2C_POLL(I2C_Packet *packet)
 	}
 }
 
+uint8_t Check_I2C_Callback(I2C_Packet *packet, void *p)
+{
+	uint8_t error = 0;
+	if((packet->i2c_callback != 0) && (packet->state == WR_ADDRESS))
+	{
+		error = packet->i2c_callback(packet->data[0], p);
+		// we only want to run the callback once
+		packet->i2c_callback = 0;
+		// make sure TXAK is cleared
+		I2C0->C1 &= ~I2C_C1_TXAK_MASK;
+	}
+	return(error);
+}
 
